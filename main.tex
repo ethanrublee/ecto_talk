@@ -1,0 +1,221 @@
+\begin{frame}
+   \note{ 
+   }
+   \titlepage
+\end{frame}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\begin{frame}[fragile]
+\frametitle{Tabletop Segmentation}
+
+\begin{itemize}[<alert@+>]
+
+\item PointCloud input
+
+\item VoxelGrid
+
+\item Normals
+
+\item PlanarSegmentation
+
+\item ProjectInliers
+
+\item ConvexHull
+
+\item ExtractPrism
+
+\item Examine points in original pointcloud, inside the bounding boxes
+
+\end{itemize}
+
+\note{Asked by Kurt
+
+Difficult to express vision apps in terms of nodes, or nodelets
+
+Approximate Time Synchronizers... everywhere
+
+Example:  point cloud -> voxelgrid -> normals -> segment out the table -> cluster -> bounding boxes,
+now you want to look at the original pointcloud, inside the bounding boxes, to find the objects
+
+}
+\end{frame}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\begin{frame}[fragile]
+\frametitle{History}
+
+\begin{itemize}[<alert@+>]
+
+\item RIDE (single process, flow graph)
+\item ROS  (async message passing)
+\begin{itemize}
+  \item nodes
+  \item nodelets
+\end{itemize}
+\item Sieglinde (Antarctic Muon And Neutrino Detector Array software)
+\item IceTray {single process, singlethreaded, pybound}
+\item OpenCV
+\item Computational Crystallography Toolbox  \texttt{boost::python} \texttt{http://cctbx.sourceforge.net}
+\end{itemize}
+\end{frame}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\begin{frame}[fragile]
+\frametitle{the design space}
+
+\begin{itemize}[<alert@+>]
+
+\item interprocess vs intraprocess
+
+\item single- vs multi-threaded
+
+\item synchronous vs asynchronous
+
+\item compiled vs interpreted
+
+\item reliable vs unreliable delivery of messages
+\end{itemize}
+\end{frame}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\begin{frame}[fragile]
+\frametitle{LOC}
+
+
+Ecto \emph{Amoeba} (Beta, August 2011)
+
+Development began in earnest March 11, 2011
+\begin{itemize}
+
+\item Ecto core:
+\begin{itemize}
+
+\item 7k lines C++
+
+\item 2.5k lines Python
+\end{itemize}
+
+\item Tests:
+\begin{itemize}
+
+\item 1.8k lines C++
+
+\item 3.3k lines Python
+\end{itemize}
+\end{itemize}
+
+> 2k lines of handwritten .rst documentation
+
+\begin{itemize}
+\item Across projects \texttt{ecto}, \texttt{ecto\_pcl}, \texttt{ecto\_ros}, \texttt{ecto\_opencv}:
+\item 28k lines C++, 9.5k lines Python
+\end{itemize}
+
+\end{frame}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\begin{frame}
+\begin{quotation}
+``The biggest sea change in software development since the OO
+revolution is knocking at the door, and its name is Concurrency.''
+
+\vskip0.5cm
+-- Herb Sutter, ``The Free Lunch Is Over'', 2005
+\end{quotation}
+\end{frame}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\begin{frame}[fragile]
+\frametitle{dig it}
+
+
+Multithreaded... or singlethreaded.  You choose.  At runtime.  Without
+recompiling.
+\begin{itemize}[<+-| alert@+>]
+
+\item an attack on the manycore problem
+
+\item semantics of copying
+
+\item task parallelism vs data parallelism: allow individual cells to be
+as data-parallel as one likes.  Inherently task-parallel, where each
+cell performs a task: individual ticks of data execute concurrently,
+and individual tasks within the processing of that tick of data
+execute concurrently.
+\end{itemize}
+
+\end{frame}
+
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\begin{frame}[fragile]
+\frametitle{Goals}
+
+\begin{itemize}[<alert@+>]
+
+\item Give researchers a mental model that makes them productive and
+naturally expresses task-parallelism
+
+\item Support but don't force the use of primarily data-parallel
+technologies like CUDA... even if every operation happens on a
+massively parallel coprocessor (like a gpu) you \emph{still} need a way
+to organize them.
+
+\item Scale to many cores w/o recompiling
+
+\item Make individual algorithms and \emph{components} of algorithms easily
+reusable
+
+\item Be more general than vision/perception/robotics... audio?  general
+machine learning?
+
+\item Portability: unix/osx/windows
+\end{itemize}
+
+buildable and usable with standard tools... easy for experienced developers to grok
+
+as introspectiable and self-documenting as possible
+
+minimal system dependencies:  boost, python, cmake.
+
+optionality of python
+
+no environment variables beyond (PYTHON|LD\_LIBRARY)\_PATH
+
+easy integration with other systems
+
+embedding in other
+\end{frame}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\begin{frame}[fragile]
+\frametitle{target users}
+
+\begin{itemize}[<alert@+>]
+
+\item researchers (vision|perception):  code in C++, run via python
+
+\item tinkerers, end-users:  script in python
+\end{itemize}
+\end{frame}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\begin{frame}[fragile]
+\frametitle{future work}
+
+\begin{itemize}[<alert@+>]
+
+\item new schedulers
+
+\item processor affinity;  topology of graph on hardware
+
+\item reverse edges
+
+\item integration
+\end{itemize}
+
+\end{frame}
+
+
+

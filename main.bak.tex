@@ -1,0 +1,1559 @@
+\begin{frame}
+   \note{ 
+   }
+   \titlepage
+\end{frame}
+
+\begin{frame}{The Underpants Gnomes' Business Plan}
+  \begin{columns}[c]
+    \column{0.5\textwidth}
+    \begin{enumerate}
+    \item Collect Underpants
+    \item ???
+    \item Profit
+    \end{enumerate}
+    \column{0.5\textwidth}
+    \pgfdeclareimage[height=1in]{x}{underpants_gnomes}
+    \pgfuseimage{x}
+    \end{columns}
+\end{frame}
+
+\begin{frame}{The Kamasu Business Plan}
+  \begin{columns}[c]
+    \column{0.5\textwidth}
+    \begin{enumerate}
+    \item Learn boost::proto
+    \item Learn CUDA
+    \item Combine
+    \item ??? \only<2>{\alert<2>{<-  You are here}}
+    \item Profit
+    \end{enumerate}
+    \column{0.5\textwidth}
+    \pgfdeclareimage[height=1in]{x}{underpants_gnomes}
+    \pgfuseimage{x}
+    \end{columns}
+
+  \note{The good news is that the problem-hungry amongst you are about to be well fed
+
+    I haven't written a compiler for the GPU using only templates.
+
+    By combining proto and CUDA I went for cheap laughs, so to speak,
+    and I'm sure some of you will find this in bad taste.
+}
+
+\end{frame}
+
+\begin{frame}{Outline}
+  \tableofcontents
+  % You might wish to add the option [pausesections]
+\end{frame}
+
+\section{CUDA}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\begin{frame}{The GPU vs the CPU}
+  \begin{center}
+  \pgfdeclareimage[width=4in]{x}{gpuvscpu}
+  \pgfuseimage{x}
+  \end{center}
+
+  \note{ gpu specialized for compute-intensive, highly parallel
+    computation, which is what grahics is all about, so more of it is
+    dedicated to doing math.
+
+    it has a lot less sophisticated flow control
+
+    a lot smaller cache
+
+    the green bits are 
+    
+    presumably that's not to scale
+  }
+\end{frame}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\begin{frame}{The GPU vs the CPU}
+  \begin{center}
+  \pgfdeclareimage[width=4in]{x}{Flops_1_L}
+  \pgfuseimage{x}
+  \end{center}
+  (image courtesy of NVIDIA)
+  \note{
+    whoa
+  }
+\end{frame}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\begin{frame}{The GPU}
+  \begin{center}
+  \pgfdeclareimage[height=3in]{x}{Device}
+  \pgfuseimage{x}
+  \end{center}
+
+  \note{ This is Single Instruction Multi Thread, handles hundreds of
+    threads running different programs.
+
+    Broken up into Streaming Multiprocessors, seen here, which have
+    eight Scalar Processor cores, an instruction unit, shard memory,
+    some cache.  This thing creates and manages threads and implements
+    \_\_syncthreads() which is for synchronization.
+
+    Constant cache is fast and constant
+
+    Texture cache is fast and constant and has some extra capabilities
+    for filtering and whatnot.
+
+    video card GTX 280 in my machine has 30 of these multiprocessors,
+    each with 8 cores, 8k registers and 16k of shared memory, clock is
+    1.35GHz.
+
+    There is an organizational scheme that they use involving warps,
+    blocks and grids, which I'll wave my hands at in a moment.
+    }
+
+\end{frame}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\begin{frame}{Building software to run on the gpu}
+
+  \begin{itemize}
+  \item<+-> ``C for CUDA'' is (soon C++) with extensions
+  \item<+-> Mix device and host code (and both code)
+  \item<+-> Run the file through NVCC 
+  \item<+-> compile the result with gcc, compiled CUDA code is linked
+    into the binary
+  \end{itemize}
+
+  \note<1>{Soon C++... I've recently got hold of the developer's beta of the 
+    SDK and they're doing a remarkably good job with templates,
+    unfortunately Not much of this has been incorporated into kamasu
+    itself yet and it isn't clear what this means for architecture.  The
+    C++ beta currently can *not* parse proto headers, bug report is in.
+
+    At first: no exceptions, no stdio in anything that NVCC sees, very
+    restrictive, only thing that it could handle was
+    boost.preprocessor, so there were tons of compiler firewalls and C
+    interfaces that are now disappearing.
+  }
+
+  \note<2>{There are just a couple of special things that you decorate your functions with
+    to specify where they're going to run. 
+  }
+
+  \note<3>{NVCC
+  }
+
+  \note<4>{
+    typically nvcc calls gcc for you.  it is pretty easy to use
+    and from a unixy perspective it is pretty natural.
+  }
+
+\end{frame}
+
+\begin{frame}[fragile]{Serially adding a scalar to an array}
+  \begin{semiverbatim}
+void add(float* data, unsigned size, 
+         float scalar)
+\{
+  for(unsigned i=0; i<size; i++) 
+    data[i] += scalar;
+\}
+  \end{semiverbatim}
+  \note{looking at how to add a scalar to a vector.
+
+    this is the sequential C version we're all familiar with.
+}
+\end{frame}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\begin{frame}[fragile]{Adding a scalar to an array in cuda-parallel}
+  \begin{semiverbatim}\alert<2>{__global__} void
+\alert<8>{add}\alert<11>{(float *data, float scalar)}
+\{
+  data[\alert<3>{threadIdx.x}] += scalar;
+\}
+\visible<4->{
+int main() \{
+\alert<5>{  int N = 1024;}
+\alert<6>{  float *arr = make_vector_on_gpu(N);}
+  
+\alert<7>{  \alert<8>{add}\hskip0pt<\hskip0pt<\hskip0pt<\alert<9>{1}, \alert<10>{N}>\hskip0pt>\hskip0pt>\alert<11>{(arr, 3.14159)};}
+\}
+}
+
+
+\end{semiverbatim}
+
+  \note<1>{ This is a 'kernel' or a function that executes on the device,
+            but is called by the host.  This thing is compiled by
+            nvidia's special 'nvcc' compiler and makes gpu-runnable code.
+            }          
+\note<2>{          
+    the \_\_global\_\_ specifier makes it so.  this function is compiled
+    by nvcc into code that runs on the gpu.
+    }   
+\note<3>{    
+    this threadidx is a built in variable that the nvcc compiler puts
+    into every kernel function.  it is actually has 3 dimensional
+    structure, a 2 dimensional 'grid' of 'blocks', and a thread index
+    within the block.
+}
+\note<4>{
+    Here's how we launch it. 
+}
+\note<5>{We're going to deal with a vector of 1k elements}
+\note<6>{First we somehow make an array of N
+    elements out on the GPU, we'll get to that, }
+
+\note<7>{then we use this magic anglebracket syntax to launch a
+  kernel.  NVCC preprocesses this into a bunch of function calls to
+  the cuda driver that fetches the compiled code for the kernel from a
+  withwherever its been stored (typically that is compiled right in to
+  the binary itself), ships it out to the video card, and executes it
+  however many times is specified with this grid/block stuff.
+
+  What this says is that we want to launch the kernel
+}
+
+\note<8>{add}
+\note<9>{one block (this is the size of the ``grid'')}
+\note<10>{where each block contains N threads}%
+\note<11>{and we pass it the following arguments.  Note that since the pointer
+  to float that we're passing it is a pointer to *device* memory, not
+  host memory.  if you screw this up, things typically run without
+  crashing and just silently give you garbage results
+}%
+
+\note<12>{ For this simple kernel of course we don't care what order
+  things are run in, no worries about synchronization or sharing
+  memory between threads.  The grid/block abstractions and the
+  hardware itself come in to play when you need to do this kind of
+  thing, (this is where the hand waving comes in to play).
+
+  Okay.  So we have a general sense that we can write kernels that
+  operate on data that is out on the device, and we can probably reuse
+  kernels that others have written provided we can figure out how that
+  kernel expects memory to be laid out, what it's parameters need to
+  be, and so on.  There is a quickly growing ecosystem of kernels to
+  do random number generation, BLAS, monte carlos, and as far as I can
+  tell they're mostly custom-written for scenarios that make for the
+  best looking benchmarks in academic publications.  I understand
+  adobe has some that do video encoding and photoshop effects with
+  tremendous speedup, etc.  But we're more interested in a C++
+  architecture that exploits this, so we'll move back to the host side
+  of things.
+}
+\end{frame}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\begin{frame}[fragile]{CUDA Memory management}
+  \begin{semiverbatim}
+cudaError_t \alert<2>{cudaMalloc}(void** devPtr, size_t count );
+cudaError_t \alert<3>{cudaFree}(void* devPtr);
+
+cudaError_t \alert<4>{cudaMemcpy}(void* dst, const void* src, 
+                       size_t count, 
+                       enum \alert<5>{cudaMemcpyKind} kind);
+
+\alert<6>{cudaMemcpyHostToHost}
+\alert<7>{cudaMemcpyHostToDevice}
+\alert<8>{cudaMemcpyDeviceToHost}
+\alert<9>{cudaMemcpyDeviceToDevice}
+
+cudaError_t \alert<10>{cudaMemset}(void* devPtr, int value, 
+                       size_t count);
+  \end{semiverbatim}
+
+\end{frame}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\begin{frame}[fragile]{A holder class}
+  \begin{semiverbatim}template <typename T>
+class holder : boost::noncopyable
+\{
+    T* devmem;
+    std::size_T size_;
+
+  public:
+
+    holder();
+    holder(std::size_t n);
+    ~holder();
+    boost::shared_ptr<holder> clone();
+    void resize(std::size_t size);
+    T* data() \{ return devmem; \}
+    std::size_t size() \{ return size_; \}
+\};
+\end{semiverbatim}
+\note{it isn't an array, it could be the underlying data used by an a ndimensional
+  array}
+\end{frame}
+
+\begin{frame}[fragile]{holder<T> implementations}
+\begin{semiverbatim}template <typename T>
+holder<T>::holder(std::size_t s) : size_(s)
+\{
+   cudaMalloc(reinterpret_cast<void**>(&devmem), 
+              size_ * sizeof(T));
+\}
+
+template <typename T>
+holder<T>::~holder()
+\{
+  if (devmem)
+    cudaFree(devmem);
+\}
+  \end{semiverbatim}
+\end{frame}
+
+\begin{frame}[fragile]{holder<T> implementations}
+\begin{semiverbatim}template <typename T>
+boost::shared_ptr<holder<T> >
+holder<T>::clone()
+\{
+   boost::shared_ptr<holder> nh(new holder(size_));
+   cudaMemcpy(devmem, nh->devmem,
+              sizeof(T) * size_,
+              cudaMemcpyDeviceToDevice);       
+   return nh;
+\}
+  \end{semiverbatim}
+\end{frame}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\begin{frame}[fragile]{holder<T> implementations}
+\begin{semiverbatim}template <typename T>
+void
+holder<T>::put(const T* hostmem, std::size_t s)
+\{
+  if (s != size_)
+    resize(s);
+  cudaMemcpy(devmem, hostmem, s * sizeof(T),
+             cudaMemcpyHostToDevice);
+\}
+
+template <typename T>
+void
+holder<T>::get(T* hostmem)
+\{
+  cudaMemcpy(hostmem, devmem, size_ * sizeof(T),
+             cudaMemcpyDeviceToHost);
+\}\end{semiverbatim}
+
+\note{now we just pass these things around at the end of shared
+  pointers and we're good when for instance one array is a slice
+  of another array}
+
+\end{frame}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\begin{frame}[fragile]{numpy arrays}
+\begin{semiverbatim}\py a
+array([[  1.,   \alert<4>{2.},   3.,   4.,   5.],
+\alert<2>{       [  6.,   \alert<5-6>{\alert<4>{7.},   8.,   9.,}  10.],}
+       [ 11.,  \alert<5-6>{\alert<4>{12.},  13.,  14.,}  15.],
+\alert<3>{       [ 16.,  \alert<4>{17.},  18.,  19.,  20.]}])
+
+\only<2-4>{
+\py a[1,:]
+\alert<2>{array([  6.,   7.,   8.,   9.,  10.])}
+
+\py a[3,::-1]
+\alert<3>{array([ 20.,  19.,  18.,  17.,  16.])}
+
+\py a[:,1]
+\alert<4>{array([  2.,   7.,  12.,  17.])}
+}\only<5->{
+\py a[1:3, 1:4]
+array([\alert<5>{[  7.,   8.,   9.],
+       [ 12.,  13.,  14.]}])
+
+\py a[2:0:-1, 3:0:-1]
+array([\alert<6>{[  9.,   8.,   7.],
+       [ 14.,  13.,  12.]}])
+
+}
+\end{semiverbatim}
+\note{the python bindings for kamasu support exactly this syntax, there is a 
+special function called when you use this slicing notation}
+\end{frame}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\begin{frame}[fragile]{Kamasu arrays}
+\begin{semiverbatim}
+using resophonic::kamasu::_;
+
+array<float> a(m,n), c(m,n,o,p,q); 
+
+array<float> b = a(index_range(_,_), index_range(2));
+
+b = a(index_range(_,_,-1), index_range(_,_,-1));
+
+float f = b(0,0); // a(9,9)
+\end{semiverbatim}
+\end{frame}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\begin{frame}[fragile]{Kamasu array metadata}
+\begin{semiverbatim}struct view_params \{
+  std::size_t \alert<2>{dims}[KAMASU_MAX_ARRAY_DIM];
+  std::size_t \alert<3>{factors}[KAMASU_MAX_ARRAY_DIM];
+  int strides[KAMASU_MAX_ARRAY_DIM];
+
+  offset_t offset;
+  std::size_t linear_size;
+  unsigned nd;
+\};
+
+template <typename T>
+struct array_impl
+\{
+  view_params vp;
+  shared_ptr<holder<T> > gpu_data;
+\};
+
+array<float> a(10,10), b;
+b = a.slice(index_range(_,_,-1), index_range(2));
+b(4);
+\end{semiverbatim}
+\note{arrays can be views of the same data,
+
+semantics is always 'shared' unless you specifically copy something... same as numpy.
+
+gpu\_data is stored in column-major form for compatibilty with cublas,
+(if the stride of the last dimension is one)
+
+We need to be able to find the index in memory of a particular entry
+if we index it with parenthesis, on the c++ side, and also, from the
+CUDA side, we start with the 3-dimensional grid-block-thread index,
+the indexes and dimensions of which have nothing to do with the array,
+and we have to know which entry we're working on.
+
+linear size could be recomputed, it is just the product of the dimensions, 
+we precompute to save time, as numpy does
+
+might be good to have underscore be a general purpose object.
+
+}
+\end{frame}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\section{boost::proto}
+\subsection{transforms}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\begin{frame}[fragile]{Life before proto}
+\begin{semiverbatim}
+array<float> operator+(const array<float>& a, float f);
+
+array<float> a(10), b(10);
+a = b + 14;
+\end{semiverbatim}
+\note{T::T()
+T::T()
+T::T(float)
+T\& T::operator=(T\&\&)
+a.value=14
+
+important thing is that the rhs gets eagerly evaluated... the T on the
+lhs has only operator=(T\&)
+
+problem is when you try to make that operator+ return a template that
+you can evaluate later}
+\end{frame}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\begin{frame}[fragile]{\alert<4-7>{b} \alert<3>{+} \alert<8-11>{7.0f};}
+\begin{semiverbatim}
+\alert<2>{expr<
+  \alert<3>{tag::plus}, 
+  list2<
+    \alert<4>{expr<
+      \alert<5>{tag::terminal}, 
+      \alert<6>{array<float> const&}, 
+    >},
+    \alert<7>{expr<
+      \alert<8>{tag::terminal}, 
+      \alert<9>{float const&}, 
+    >} 
+  >,
+>} 
+\end{semiverbatim}
+\note{ 
+
+  evaluates to this big nested type.
+
+  it has a tag plus, which we'll use later when we want to actually do something
+  
+  plus has two children, the first is also an expression
+
+  so expressions have tags, like plus, multiplies, comma, or terminal.
+  everything is overloaded, that's all done for you.  
+
+  When you see things laid out the way proto lays them out for you it is
+  easier to think.  imv.
+  
+  
+% boost::proto::exprns_::expr<boost::proto::tag::plus, boost::proto::argsns_::list2<boost::proto::exprns_::expr<boost::proto::tag::terminal, boost::proto::argsns_::term<bing::matrix&>, 0l>, boost::proto::exprns_::expr<boost::proto::tag::terminal, boost::proto::argsns_::term<int const&>, 0l> >, 2l>
+
+% resophonic::kamasu::Expression<boost::proto::exprns_::expr<boost::proto::tag::plus, boost::proto::argsns_::list2<resophonic::kamasu::array<float>&, resophonic::kamasu::Expression<boost::proto::exprns_::expr<boost::proto::tag::terminal, boost::proto::argsns_::term<int const&>, 0l> > >, 2l> >
+}
+\end{frame}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\begin{frame}[fragile]{\visible<1-6>{\alert<6>{b} + 7.0f;}}
+\begin{semiverbatim}
+\only<1>{boost::proto::}\only<1-2>{exprns_::}expr<
+   \only<1>{boost::proto::}tag::plus, 
+   \only<1>{boost::proto::}\only<1-2>{argsns_::}list2<
+     \only<1>{boost::proto::}\only<1-2>{exprns_::}expr<
+       \only<1>{boost::proto::}tag::terminal, 
+       \only<1>{boost::proto::}\only<1-2>{argsns_::}\alert<4>{term}\hskip0pt<\alert<6>{array}>, 
+       \alert<5>{0 \visible<5>{  // arity}}
+     >, 
+     \only<1>{boost::proto::}\only<1-2>{exprns_::}expr<
+       \only<1>{boost::proto::}tag::terminal, 
+       \only<1>{boost::proto::}\only<1-2>{argsns_::}\alert<4>{term}\hskip0pt<int const&>, 
+       \alert<5>{0}
+     > 
+   >, 
+   \alert<5>{2}
+>
+\end{semiverbatim}
+\note{ 
+  actually its more complicated than that
+
+  so the first thing we'll look at is where did this expression come
+  from, if this object 'b' is just of type array?  Actually it came
+  from someplace irrelevant, but we'll look at how to make this array
+  type a proto expression itself.
+
+}
+\end{frame}
+
+% FIXME can't explain this
+%  So we have two elementwise additions and a multiplication (which
+%  isn't elementwise).  Still haven't thought about things like
+%  elementwise multiplication vs matrix multiplication, or how useful
+%  they are.
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\begin{frame}[fragile]{an array is an expression}
+\begin{semiverbatim}
+proto::exprns_::\alert<2>{expr}\hskip0pt<
+  proto::\alert<3>{tag::terminal}, 
+  proto::argsns_::term<\alert<4>{T}>, 
+  0
+>
+
+\alert<6>{\alert<5>{proto::terminal}\hskip0pt<T>::type}
+
+namespace bp = boost::proto;
+
+struct array_impl \{ /* data goes here */ \};
+
+struct array : proto::terminal<array_impl>::type
+\{ ... \};
+
+\end{semiverbatim}
+\note{ 
+
+  the overloads that build the expression are defined by proto,
+  for this type 'expr' which holds a terminal of some type T
+
+  proto has lots of metafunctions, and this one terminal, luckily,
+  will create that expression type for us.
+
+  the array\_impl is also a good place for a compiler firewall since
+  we're not doing everything in our headers
+
+  so now this array type participates in all the overloads,
+  transforms, domains, grammars and other goodies that proto provides.
+
+}
+\end{frame}
+
+  % FIXME can't explain this
+%  So we have two elementwise additions and a multiplication (which
+%  isn't elementwise).  Still haven't thought about things like
+%  elementwise multiplication vs matrix multiplication, or how useful
+%  they are.
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\begin{frame}[fragile]{Hello World}
+\begin{semiverbatim}struct array_impl \{ \};
+
+struct array : bp::terminal<array_impl>::type
+\{
+  template <typename Expr>
+  void operator=(const Expr& expr)
+  \{
+    std::cout << name_of(expr);
+  \}
+\};
+
+array a, b;
+a = b + 7.0f;
+
+boost::proto::exprns_::expr<boost::proto::tag::plus, 
+boost::proto::argsns_::list2<array&, boost::proto::e
+xprns_::expr<boost::proto::tag::terminal, boost::pro
+to::argsns_::term<float const&>, 0l> >, 2l>
+\end{semiverbatim}
+\note{ 
+
+  the overloads that build the expression are defined by proto,
+  for this type 'expr' which holds a terminal of some type T
+
+  proto has lots of metafunctions, and this one terminal, luckily,
+  will create that expression type for us.
+
+  the array\_impl is also a good place for a compiler firewall since
+  we're not doing everything in our headers
+
+  so now this array type participates in all the overloads,
+  transforms, domains, grammars and other goodies that proto provides.
+
+}
+\end{frame}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\begin{frame}[fragile]{display\_expr}
+\begin{semiverbatim}\alert<2>{std::ostream& operator<<(std::ostream& s, array_impl) 
+\{
+  return s << "array_impl";
+\}}
+
+struct array : bp::terminal<array_impl>::type
+\{
+\alert<3>{  template <typename Expr>
+  void operator=(const Expr& expr)
+  \{
+    std::cout << \alert<4>{bp::display_expr}(expr);
+  \}}
+\};
+\begin{columns}[t]
+  \column{0.5\textwidth}\only<-6>{\alert<5>{array a, b;
+a = b + 7.0f;
+
+
+
+}}\column{0.5\textwidth}\only<6>{\alert<6>{plus(
+    terminal(array_impl)
+  , terminal(7)
+)
+}}
+\end{columns}
+\end{semiverbatim}
+\note<1>{}
+\note<2>{We make an freestanding insertion operator so that display\_expr can handle our type}
+\note<3>{and inside this templated assignment operator which will get
+  passed some big expression type, which we'll pass to}
+\note<4>{this proto builtin display\_expr}
+\note<5>{and when we do this,}
+
+\note<6>{this comes out.  so clearly display\_expr has somehow walked
+  the expression tree, printing things as it goes along.  Later we'll
+  code up a variant of display\_expr to see how proto transforms work.
+}
+
+\end{frame}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\begin{frame}[fragile]{Operator Swine Flu}
+\begin{semiverbatim}\alert<2>{trespasser s, t;}   \alert<3>{array m, n;}
+m = \alert<6>{s} \alert<5>{&} \alert<7>{~n} \alert<4>{>>=} \alert<9>{std::cout} \alert<8>{%} \alert<11>{m}\alert<10>{->*}\alert<12>{t};
+
+\alert<4>{shift_right_assign}(
+    \alert<5>{bitwise_and}(
+        \alert<6>{terminal(trespasser)}
+      , \alert<7>{complement(
+            terminal(array_impl)
+        )}
+    )
+  , \alert<8>{modulus}(
+        \alert<9>{terminal(0x607068)}
+      , \alert<10>{mem_ptr}(
+            \alert<11>{terminal(array_impl)}
+          , \alert<12>{terminal(trespasser)}
+        )
+    )
+)
+\end{semiverbatim}
+
+\note<1>{As you know operators tend to infect things that they are
+  near and since proto overloads every operator there is, by default,
+  everything gets infected and you have operator swine flu.  }
+
+\note<2>{So here are some 'trespasser' types that have nothing to do
+  with our dsel}
+
+\note<3>{And some of our regular array types which are proto terminal
+  expressions.  now, proto overloads all operators, and since it isn't
+  checking to see if overloads actually exist for these trespasser
+  types, it happily builds a bit ol expression type of... }
+
+
+
+\end{frame}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\begin{frame}[fragile]{Transforms}
+\begin{semiverbatim}
+struct array_impl \{ /* pointers, strides, etc. */ \};
+struct array : bp::terminal<array_impl>::type
+\{ /* ... */ \};
+
+\alert<2>{array a};
+
+\alert<3->{array_impl& aimpl =}
+\alert<4>{   a.child0;}          // via base class' member
+\alert<5>{   bp::value(a);}      // free function
+   \alert<8>{\alert<7>{\alert<6>{bp::_value}()}(a);}   // instance of _value
+   \alert<9>{bp::_child0()(a);}  // instance of _child0
+   \alert<10>{bp::child_c<0>(a);}
+   \alert<11>{bp::child<mpl::long_<0> >(a);}
+   \alert<12>{bp::_left()(a);}    // instance of _left
+   \alert<13>{bp::left(a);}       // left function
+\end{semiverbatim}
+\note<1>{ Now the question is what we can do with those. }
+\note<2>{ We make an array, which is a proto terminal.  This thing could be part 
+of a larger expression passed to us in the assignment operator. }
+\note<3>{ we want to get at the underlying array\_impl which we use to do actual computations.
+there is this list of different ways.}
+
+   
+\note{ \_value the type is different than value the free function for a
+  very important reason and spectacularly nifty trick, we'll see in a
+  minute.
+
+  so what is the return type of the function bp::value?  it is the
+  result of running the transform \_value on the object.  How is that
+  determined?  By types nested inside this \_value transform type.
+}
+\end{frame}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\begin{frame}[fragile]{More transforms}
+\begin{semiverbatim}
+struct array_impl \{ float value; \};
+struct array : bp::terminal<array_impl>::type \{ ... \};
+array t;
+
+\alert<4>{\only<4-5>{bp::display_expr(}\alert<2>{t + 2}\only<4-5>{)}}
+\begin{columns}[t]
+  \column{0.5\textwidth}\alert<3>{expr<
+  tag::plus 
+, list2<
+    array&
+  , expr<
+      tag::terminal 
+    , term<int const&> 
+    , 0
+    > 
+  >
+, 2
+>}
+\column{0.5\textwidth}\alert<5>{plus(
+    terminal(array_impl)
+  , terminal(2)
+)}
+\end{columns}
+
+
+
+\end{semiverbatim}
+\note<1>{now a slightly more complicated example }
+\note<2>{with this expression t + 2}
+\note<3>{here's the proto type of it}
+\note<4>{and if we call display\_expr on it}
+\note<5>{we get this pretty-printed form}
+\note<6>{move it over}
+\note<7>{take the child of it and display that expression}
+\note<8>{and take the value of the child}
+\end{frame}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\begin{frame}[fragile]{More transforms}
+\begin{semiverbatim}
+struct array_impl \{ float value; \};
+struct array : bp::terminal<array_impl>::type \{ ... \};
+array t;
+
+\only<1>{bp::display_expr(t + 2)
+}\only<2>{bp::display_expr(bp::child1(t + 2))
+}\only<3>{std::cout << bp::value(bp::child1(t + 2))}
+
+
+\only<1>{plus(
+    terminal(array_impl)
+  , terminal(2)
+)}\only<2>{terminal(2)
+
+
+}\only<3>{2
+
+
+
+}
+
+
+
+
+
+
+
+
+
+\end{semiverbatim}
+\note{In case you missed it the first time here's an example with less
+  than tasteful use of operators (go fast)}
+\end{frame}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\begin{frame}[fragile]{More transforms}
+\begin{semiverbatim}
+struct array_impl \{ float value; \};
+struct array : bp::terminal<array_impl>::type \{ ... \};
+array t;
+
+\alert<8>{bp::value(\alert<6>{bp::right(\alert<4>{bp::left(\alert<2>{\alert<5>{a++->* \alert<7,9>{7}} /= 4})})});}
+
+\alert<3>{divides_assign(
+\alert<5>{    mem_ptr(
+        post_inc(
+            terminal(array_impl)
+        )
+      , \alert<7>{terminal(\alert<9>{7})}
+    )}
+  , terminal(4)
+)}
+\end{semiverbatim}
+\note{ 
+
+but the free functions aren't what is interesting.  it is the
+transforms, or function objects that are nice.
+}
+\end{frame}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\begin{frame}[fragile]{Matching expressions}
+\begin{semiverbatim}struct Grammar
+  : \alert<2>{bp::or_<}\alert<3>{bp::terminal<array_impl<float> >,
+            bp::terminal<float>,
+            bp::plus<bp::terminal<array_impl<float> >,
+                     bp::terminal<float> >}
+            \alert<2>{>}
+\{ \};
+
+template <typename Expr>
+void
+array::operator=(const Expr& expr)
+\{
+  std::cout << \alert<4>{bp::matches<Expr, Grammar>()} << "\\n";
+\}
+
+\alert<5>{m = s & ~m >\hskip0pt>= std::cout % n->*t;   // prints '0'}
+\alert<6>{m = n + 7.0f;                       // prints '1'}
+\end{semiverbatim}
+\note<1>{ so let's see how to quarantine these operators }
+
+\note<2>{ here's this new thing 'or'.  proto or does what it looks
+  like it does, it matches the disjunction of its arguments, and here we say it matches either}
+\note<3>{
+  an array of float, or just a float, or the plus of an array and a float
+}
+
+\note<4>{ here we create a temporary of type matches of Expr, Grammar,
+  which will inherit from mpl true if true, mpl false if not, and so}
+
+\note<5>{ this guy will print zero, and }
+\note<6>{ this guy will print one.}
+
+\end{frame}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\begin{frame}[fragile]{Detecting invalid expressions}
+\begin{semiverbatim}template <typename Expr>
+\only<1,4->{void}\only<2-3>{\alert<2>{typename enable_if<bp::matches<Expr, Grammar> >::type}}
+array::operator=(const Expr& expr)
+\{
+  // to come: do something with expr
+  \only<4->{\alert<4>{BOOST_MPL_ASSERT((bp::matches<Expr, Grammar>));}}
+\}
+
+m = s & ~m >\hskip0pt>= std::cout % n->*t;
+\only<1-2,4>{
+
+
+
+
+
+
+}\only<3>{\alert<3>{error: no match for 'operator=' in 'm = boost::prot
+o::exprns_::operator>>= [with Left = boost::proto::
+exprns_::expr<boost::proto::tag::bitwise_and, boost
+::proto::argsns_::list2<boost::proto::exprns_::expr
+<boost::proto::tag::terminal, boost::proto::argsns_
+::term<trespasser&>, 0l>, const boost::proto::exprn
+s_::expr<boost::proto::tag::complement, boost::prot
+o::argsns_::list1<boost::proto::exprns_::expr<bo...}}\only<5-6>{error: no matching function for call to 'assertion_
+failed(mpl_::failed\alert<6>{************ }boost::proto::resul
+t_of::matches<boost::proto::exprns_::expr<boost::pr
+oto::tag::shift_right_assign, boost::proto::argsns_
+::list2<const boost::proto::exprns_::expr<boost::pr
+oto::tag::bitwise_and, boost::proto::argsns_::list2
+<boost::proto::exprns_::expr<boost::proto::tag::ter
+mina  ....  proto::a>, 2l>, Grammar>::\alert<6>{************})'}
+\end{semiverbatim}
+\note{ We can use the fact that this matches inherits from
+  metabooleans to do this check at compile time,
+
+you can do this with enable\_if, which gives you an error that
+looks like roadkill,
+
+or with MPL\_ASSERT, which looks like roadkill with stars in in.  not
+so much like roadkill but like something that is just injured, with
+the stars around its head there.  but at least should give the user
+the idea that the errror is on purpose, library is trying to tell him
+something, not that he hasn't found a bug }
+\end{frame}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\begin{frame}[fragile]{Activating a grammar}
+\begin{semiverbatim}
+\alert<2>{struct ToString : \alert<3>{bp::callable}
+\{
+\alert<4>{  typedef std::string result_type;
+}  
+\alert<5>{  template <typename T>
+  result_type operator()(const T& t)
+  \{
+\alert<6>{    return str(boost::format(\alert<14>{"%s @ %p"}) % t % &t);
+}  \}
+}\};
+}
+\alert<7>{struct \alert<8>{FloatTerminal}
+  : \alert<9>{bp::when<\alert<10>{bp::terminal<float>}, \alert<11>{ToString(bp::_value)}>}
+\{ \};}
+
+\alert<12>{bp::terminal<float>::type f = {3.14}; }
+\alert<13>{std::cout << FloatTerminal()(f);  }
+\alert<14>{``3.14 @ 0x7fff0d839aa0''}
+
+\end{semiverbatim}
+\note<1>{This is where the whole architecture of proto ties together and really blows your mind.}
+\note<2>{here we have a callable transform.  it is a callable transform because it}
+\note<3>{inherits from bp callable}
+\note<4>{has a nested result type}
+\note<5>{and a function call operator, which in this case for paedagogical purposes}
+
+\note<6>{formats a string showing the name of what it is passed and
+  the address.  But there's nothing particularly fancy about it.}
+
+\note<7>{Here's the juicy bit, a grammar}
+\note<8>{called Float Terminal.  this is just a type.}
+\note<9>{that says when,}
+
+\note<10>{you match a float terminal,}
+
+\note<11>{do this.  Now that looks like a function call but it isn't, of course
+this is a template argument, it has to be a type.  it's the type of a
+function that returns something of type ToString and takes one
+argument, something of type bp::\_value.  
+}
+
+\end{frame}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\begin{frame}[fragile]{proto::when}
+\begin{semiverbatim}// \alert<1>{a + 777.0f}
+
+\alert<2>{struct \alert<6>{ArrayTerminal}
+  : bp::when<\alert<5,12>{bp::terminal<\alert<13>{array_impl}>}, \alert<15>{ToString(bp::_value)}>
+\{ \};
+}
+\alert<3>{struct \alert<8>{FloatTerminal}
+  : bp::when<\alert<7>{bp::terminal<float>}, ToString(bp::_value)>
+\{ \};
+}
+\alert<4>{struct Grammar : 
+  bp::or_<ArrayTerminal,
+          FloatTerminal,
+          bp::when<\alert<9>{bp::plus<\only<-5>{\alert<5>{bp::terminal<array_impl>}}\only<6->{\alert<6>{ArrayTerminal}}, 
+                            \only<-7>{\alert<7>{bp::terminal<float> }}\only<8->{\alert<8>{FloatTerminal}}>},
+                   \alert<10>{ToString(\alert<11>{bp::tag::plus()},
+                            \only<-15>{\alert<15>{\alert<14>{ToString}(\alert<13>{bp::_value(\alert<12>{bp::_left})})}}\only<16->{\alert<16>{ArrayTerminal(bp::_left)}},
+                            \only<-16>{ToString(bp::_value(bp::_right)))}}\only<17->{\alert<17>{FloatTerminal(bp::_right))}}>
+	    >
+\{ \}; }     \only<11>{\alert<11>{// struct plus \{ \};}}
+\end{semiverbatim}
+\note<1>{now to activate the simple math grammar we were looking at a minute ago}
+\note<2>{we have a grammar that matches an array terminal and transforms it to a string}
+\note<3>{and the same for float terminals}
+
+\note<4>{and a grammar that matches either array or float or array plus float.
+now we can compact all this significantly make things nicely recursive}
+
+\note<5>{the struct ArrayTerminal up top already matches array terminals}
+
+\note<6>{ we can just use it}
+
+\note<7>{and the float terminal struct}
+
+\note<8>{as well}
+
+\note<9>{so when we match the plus of these two things,}
+
+\note<10>{we should do this, this involves adding another overload to
+  the ToString transform, its easy we'll see it in a minute }
+
+\note<11>{the first argument is going to be a temporary of type plus
+  which we'll use to choose a particular overload}
+
+\note<12>{and the transformed result of
+the lefthand and right hand sides,  so the lhs is going to be a terminal
+of array impl}
+
+\note<13>{the value of that is going to be an array impl}
+
+\note<14>{and we will construct a ToString and pass it that array\_impl.  
+}
+
+\note<15>{But note that these two things are the same...  already have
+  something that transforms array impls into strings, so we just use
+  it }
+
+\note<16>{
+and the same for the float terminal
+}
+\end{frame}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\begin{frame}[fragile]{They recurse!}
+\begin{semiverbatim}\alert<1>{// (a + 777.0f) + (61.0f + a)}
+
+struct \alert<2>{ArrayTerminal}
+  : bp::when<bp::terminal<array_impl>, ToString(bp::_value)>
+\{ \};
+
+struct \alert<2>{FloatTerminal}
+  : bp::when<bp::terminal<float>, ToString(bp::_value)>
+\{ \};
+
+struct \alert<4>{Grammar} :
+  bp::or_<\alert<3>{ArrayTerminal},
+          \alert<3>{FloatTerminal},
+          bp::when<bp::plus<\only<-3>{\alert<2>{ArrayTerminal}}\only<4->{\alert<4>{Grammar}},
+                            \only<-3>{\alert<2>{FloatTerminal}}\only<4->{\alert<4>{Grammar}}>,
+                   \alert<5>{ToString(bp::tag::plus(),
+                            \only<-3>{\alert<2>{ArrayTerminal}}\only<4->{\alert<4>{Grammar}}(bp::_left),
+                            \only<-3>{\alert<2>{FloatTerminal}}\only<4->{\alert<4>{Grammar}}(bp::_right))}>
+     >
+\{ \};
+\end{semiverbatim}
+
+\note<1>{but what that won't handle is nested plusses and floats arrays in different orders.}
+
+\note<2>{so this handles a plus of an array on the left and then a float, 
+}
+\note<3>{and these are already matched and transformed by our grammar, so we just
+}
+\note<4>{use our grammar
+}
+\end{frame}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\begin{frame}[fragile]{Tune up the transform}
+\begin{semiverbatim}
+struct ToString : bp::callable
+\{
+  typedef std::string result_type;
+  // ...
+\alert<2>{  result_type operator()(bp::tag::plus, 
+                         const std::string& lhs, 
+                         const std::string& rhs)
+  \{
+    return str(boost::format("%s PLUS %s") % lhs % rhs );
+  \}}
+\};
+
+array a;
+
+std::cout << \alert<3>{Grammar()(a + 777)};
+``\alert<4>{array_impl @ 0x7fffe0f3f11f PLUS 777 @ 0x7fffe0f3f10c}''
+\end{semiverbatim}
+\note<1>{now to tune up the transform}
+\note<2>{we just add an overload to this ToString thing}
+\end{frame}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\begin{frame}[fragile]{Kamasu hello world}
+\begin{semiverbatim}namespace \alert<1>{bp = boost::proto};
+namespace \alert<1>{rk = resophonic::kamasu};
+
+rk::array<float> a(10,10), b(10,10), c;
+
+\alert<2>{c = (a / 3.0f) * (b / 7.0f);}
+\only<-3>{\alert<3>{
+struct Array
+  : bp::when<bp::terminal<rk::array_impl<float> >, 
+             bp::_value>
+\{ \};
+
+struct Scalar
+  : bp::or_<bp::when<bp::terminal<float>, bp::_value>, ...>
+\{ \};
+}}\only<4->{\alert<4>{
+struct Grammar 
+  : bp::or_<bp::when<bp::divides<\alert<5>{Array, Scalar}>,
+                     \alert<5>{ArrayScalarOp}(bp::tag::divides(),
+                                   Array(bp::_left), 
+                                   Scalar(bp::_right))>,
+            bp::when<bp::multiplies<\alert<6>{Array, Array}>,
+                     \alert<6>{ArrayArrayOp}(bp::tag::multiplies(),
+                                  Array(bp::_left), 
+                                  Array(bp::_right))> 
+            >
+\{ \};
+}}
+
+\end{semiverbatim}
+
+\note<1>{ turning now to how to use these mechansms to dispatch }
+
+\end{frame}
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\begin{frame}[fragile]{a / 7.0f:  Array-Scalar Transform}
+\begin{semiverbatim}
+
+struct ArrayScalarOp : bp::callable
+\{
+  typedef rk::array_impl<float> result_type;
+
+  template <typename Tag>
+  result_type 
+  operator()(Tag, const rk::array_impl<float>& v, 
+             const float& f)
+  \{
+    // hop across the compiler firewall
+    transform<float, Tag>(v.data(), v.view_p(), scalar);
+    return v;
+  \}
+\};
+
+
+\end{semiverbatim}
+\note{
+This is also a compliation firewall  
+}
+\end{frame}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\begin{frame}[fragile]{a / 7.0f: calculate gridsize, call kernel}
+\begin{semiverbatim}
+template <typename T, typename Tag>
+void 
+transform(T* data, const view_params& vp, T scalar)
+\{
+   bd_t bd = gridsize(vp.linear_size, 64);
+   transform_knl<T, Tag><\hskip0pt<\hskip0pt<bd.first, 
+                           bd.second>\hskip0pt>\hskip0pt>(data + vp.offset, 
+                                        vp, scalar);
+\}
+\end{semiverbatim}
+\note{ 
+}
+\end{frame}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\begin{frame}[fragile]{a / 7.0f: calculate gridsize, call kernel}
+\begin{semiverbatim}template <typename T, typename Tag>
+__global__ void 
+transform_knl(T* data, view_params vp, T scalar)
+\{
+  unsigned li = linear_index(threadIdx, /* ... etc */);
+  if (li >= vp.linear_size) return;
+
+  unsigned off = actual_index(li, vp.nd, vp.factors, vp.strides);
+
+  op_impl_<T, Tag>::impl(data + off, scalar); 
+\}
+
+template <typename T>
+struct op_impl_<T, boost::proto::tag::plus>
+\{
+  static void impl(T* t, const T& scalar)
+  \{
+    *t += scalar;
+  \}
+\};
+\end{semiverbatim}
+\note{ 
+  probably cleaner ways to implement the op\_impl but nvcc complains about 
+  temporaries and whatnot at the moment.  Since c++ support is new, I'll stay
+  away from anything it warns about.
+}
+\end{frame}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\begin{frame}[fragile]{Historical curiosity}
+\begin{semiverbatim}
+__global__ void
+kamasu_elementwise_array_scalar_\alert<2>{/*OP*/}_\alert<2>{/*N*/}_knl
+(float* data,
+ unsigned linear_size,
+ \alert<2>{/*', '.join(['const std::size_t factor\%d' \% x for x in range(N)])*/},
+ \alert<2>{/*', '.join(['const int stride\%d' \% x for x in range(N)])*/},
+ float scalar)
+\{
+  if (INDEX >= linear_size)
+    return;
+
+  unsigned actual_index = 
+    \alert<2>{/* ' + '.join(['INDEX/factor\%d*stride\%d' \% (N-1, N-1)]
+                  + [' unsigned(INDEX \%\% factor\%d)/factor\%d*stride\%d' 
+                     \% (n+1,n,n) for n in range(N-1)]) */};
+  ...
+\}
+\end{semiverbatim}
+\note{
+  things were generated like this walls and walls of functions.
+
+  I decided to do it this way because there seemed to be no other way
+  and the way I justified it to myself was that I had see doug
+  gregor's perl scripts in boost::function.  Then this was part of a
+  natural progression.
+}
+\end{frame}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% \begin{frame}[fragile]{}
+% \begin{semiverbatim}template <>
+% ArrayArrayOp::result_type
+% ArrayArrayOp::operator()(boost::proto::tag::multiplies, 
+%                          const rk::array_impl<float>& lhs, 
+%                          const rk::array_impl<float>& rhs) 
+% \{
+%   // verify dimensions, etc.
+% 
+%   cublasSgemm(lhs, rhs) // call cublas matrix multiplication
+% 
+%   return rv;
+% \}
+% \end{semiverbatim}
+% \note{ 
+%   things get unrolled for passing to a cuda kernel.  We can't
+%   pass pointers, note that the factors and strides are in host memory,
+%   and these kernel functions expect pods
+% }
+% \end{frame}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% 
+% \begin{frame}[fragile]{Avoiding temporaries 2: use the LHS}
+% \begin{semiverbatim}
+% 
+% rk::array<float> a(10, 10);
+% 
+% a = sin(a);
+% 
+% \end{semiverbatim}
+% \note{
+%   in practice the LHS 
+% }
+% \end{frame}
+% 
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\begin{frame}[fragile]{Avoiding temporaries 1: emulating rvalues}
+\begin{semiverbatim}
+// \alert<2>{a = \alert<4>{\alert<3>{b} * 3.0f} / \alert<4>{\alert<3>{c} * 4.0f;}}
+
+struct \alert<5>{CopyLValue} : bp::callable
+\{
+  typedef array_impl<float> result_type;
+  
+  result_type
+  operator()(const array_impl<float>& a)
+  \{
+\alert<6>{    return a.clone();}
+  \}
+\};
+
+struct RkArrayTerminal 
+  : bp::when<bp::terminal<rk::array_impl<float> >, 
+             \alert<5>{CopyLValue(bp::_value)}>
+\{ \};
+
+struct Grammar : bp::or_<RkArrayTerminal, Scalar, ...
+\end{semiverbatim}
+\note{ }
+\end{frame}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\begin{frame}[fragile]{Avoiding temporaries 2: reuse the LHS}
+\begin{semiverbatim}
+// \alert<2>{a = sin(a);}
+
+template <typename Expr>
+array<T>::operator=(Expr const& expr)
+\{
+  array_impl<T> result = Grammar()(expr);
+  self_.copy_from(result);
+\}
+
+\end{semiverbatim}
+\note{
+  in practice the LHS 
+}
+\end{frame}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\begin{frame}[fragile]{Avoiding temporaries 2: reuse the LHS}
+\begin{semiverbatim}
+// \alert<2>{a = sin(a);}
+
+struct data_t \{ array_impl<float>* tmp; \};
+
+template <typename Expr>
+array<float>::operator=(Expr const& expr)
+\{
+  data_t data; data.tmp = this->base_ptr();
+  array_impl<float> tmp = Grammar()(expr, bool(), data);
+  self_.copy_from(result);
+\}
+
+CopyLValue::result_type
+CopyLValue::operator()(const array_impl<float>& a, data_t& data)
+\{
+  if (data.tmp == &a) \{ data.tmp = 0; return a; \} 
+  else                \{ return a.clone();       \}
+\}
+\end{semiverbatim}
+\note{
+}
+\end{frame}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\begin{frame}[fragile]{Making a lazy function call}
+\begin{semiverbatim}
+binary_expr
+\end{semiverbatim}
+\note{
+
+}
+\end{frame}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\section{Related efforts}
+
+\begin{frame}{CuPP}
+  
+\end{frame}
+
+\begin{frame}[fragile]{komrade: norm of vector}
+  \begin{semiverbatim}\alert<2>{template <typename T>
+struct square \{
+  __host__ __device__
+  T operator()(const T& x) const 
+  \{ 
+    return x * x;
+  \}
+\};}
+\alert<3>{
+float x[4] = \{ 1.0, 2.0, 3.0, 4.0 \};}\alert<4>{
+komrade::device_vector<float> d_x(x, x + 4);
+}\alert<5>{
+\alert<8>{square<float>        unary_op;}
+\alert<10>{komrade::plus<float> binary_op;}
+\alert<9>{float init = 0;}
+}
+sqrt( \alert<6>{komrade::transform_reduce}(\alert<7>{d_x.begin(), d_x.end()}, 
+                                \alert<8>{unary_op}, \alert<9>{init}, \alert<10>{binary_op}) );
+  \end{semiverbatim}
+\note{ 
+  transform, reduce, transform\_reduce, etc.  You can't do a matrx
+  multiplication or n-body simulation with this either.
+
+  it is only one kernel invocation.  But if you do these in a loop,
+  you find that they're slower than doing it in a loop except for
+  extremely large vectors because the calculation isn't numerically
+  intense.
+}
+\end{frame}
+
+
+\begin{frame}[fragile]{PyCuda (Andreas Kl\"ockner)}
+  \begin{semiverbatim}import pycuda.autoinit, pycuda.driver as drv, numpy
+
+mod = drv.SourceModule("""
+__global__ void multiply_them(float *dest, float *a, float *b)
+\{
+  const int i = threadIdx.x;
+  dest[i] = a[i] * b[i];
+\}
+""")
+
+multiply_them = mod.get_function("multiply_them")
+a = numpy.random.randn(400).astype(numpy.float32)
+b = numpy.random.randn(400).astype(numpy.float32)
+dest = numpy.zeros_like(a)
+multiply_them(
+    drv.Out(dest), drv.In(a), drv.In(b),
+    block=(400,1,1))
+print dest-a*b
+  \end{semiverbatim}
+
+
+  \note{the pycuda approach uses cuda's jit engine.  
+
+    you can use any
+    of various templating engines to 'metaprogram'}
+
+\end{frame}
+
+\section{resophonic::kamasu}
+\subsection{benchmarks}
+
+\begin{frame}{Benchmarks}
+  \pgfdeclareimage[width=4in]{x}{dilbert-benchmark} 
+  \pgfuseimage{x} 
+\end{frame}
+
+
+\begin{frame}{matrix multiplication}
+gpu runs at theoretical 933GFlops peak 4k -on-a-side matrixis 16M of
+single precision floats 68billion multiplies, only takes a couple of
+seconds a singlethreaded cpu implementation just sits there staring
+and you get bored.
+
+on the other hand, operations with low numerical intensity like
+multiplying a vector by a scalar are slower, by say 10 to 100
+
+can't really benchmark the worst case, to move one float out to the
+video card, launch a kernel to multiply it, move it back... the
+multiply takes however many clock cycles on the cpu, and the gpu case
+could be held up by who-knows what.   
+
+So any real benchmarking here is premature optimization, you see posts
+mentionin various speedups on various problems, YMMV.  
+\end{frame}
+
+\begin{frame}{scalar multiplication}
+
+\end{frame}
+
+\begin{frame}{NxN matrices,   A = B * C  (via cublas)}
+  \pgfdeclareimage[height=3in]{x}{mm_full} 
+  \pgfuseimage{x} 
+
+  \note{
+    This includes transfers to/from
+    the card.  You can't even make the video card sweat, the
+    computations are over in a flash, the fan in the card goes puff,
+    lightly
+  }
+
+\end{frame}
+
+\begin{frame}{Breakeven @  ~200x200 matrices}
+  \pgfdeclareimage[height=3in]{x}{mm_full_closeup} 
+  \pgfuseimage{x} 
+
+  \note{
+    so breakeven is at about 200.
+  }
+
+\end{frame}
+
+\begin{frame}{Low numeric intensity == low performance}
+  \pgfdeclareimage[height=3in]{x}{deepexpr_1} 
+  \pgfuseimage{x} 
+
+  \note{
+    this is guarnteed to be slower no matter what, as a copy across the
+    bus costs more than a multiply (?)
+  }
+
+\end{frame}
+
+\begin{frame}{Low numeric intensity == low performance}
+  \pgfdeclareimage[height=3in]{x}{deepexpr_10} 
+  \pgfuseimage{x} 
+
+  \note{
+    
+  }
+
+\end{frame}
+
+\begin{frame}{Low numeric intensity == low performance}
+  \pgfdeclareimage[height=3in]{x}{deepexpr_100} 
+  \pgfuseimage{x} 
+
+  \note{ these are options that also don't take very long, so hard to
+    say if you'd be willing to pay for this slowdown if you get a huge
+    one elsewhere.
+    
+    considerations: overall speed, architecture
+    
+
+}
+
+\end{frame}
+
+\begin{frame}
+
+DGELSD (singular value composition).  could use same interface as
+boost::ublas.  
+
+\end{frame}
+
+\begin{frame}{Sort -- wall clock time including transfers}
+  \pgfdeclareimage[height=3in]{x}{sort_full} 
+  \pgfuseimage{x} 
+
+  \note{}
+
+\end{frame}
+
+
+

@@ -1,0 +1,17 @@
+%
+%  notes
+%
+\documentclass[9pt]{beamer}
+
+\usepackage{ifthen}
+\newboolean{resonotes}
+\includeonly{main,preamble}
+\setboolean{resonotes}{true}
+
+\include{preamble}
+\begin{document}
+
+\include{main}
+
+\end{document}
+
