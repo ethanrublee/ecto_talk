@@ -6,3 +6,7 @@ find_package(ecto REQUIRED)
 add_subdirectory(src)
 add_subdirectory(latex)
 
+ecto_python_env_gen("")
+
+
+
