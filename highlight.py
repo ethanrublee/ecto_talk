@@ -21,26 +21,43 @@ lookups = {blue : cl.forecolors.blue,
            bold : cl.modifiers.bold,
            }
 
-def _(s, *attrs):
+def _(srch, *attrs):
     def impl(txt):
-        txt = re.sub(s, ''.join([lookups[x] for x in attrs]) + r'\1' + cl.modifiers.reset + cl.forecolors.normal,
+        return re.sub(srch,
+                      ''.join([lookups[x] for x in attrs]) + r'\1' + cl.modifiers.reset + cl.forecolors.normal,
                      txt, re.MULTILINE)
-        return txt
     return impl
 
-execfile(sys.argv[1])
-f = open(fname)
+m = {}
+m['_'] = _
+for l in lookups:
+    m[l.__name__] = l
+execfile(sys.argv[1], m)
+f = open(m['fname'])
 txt = f.read()
 
-if len(hl) == 0:
-    hl += [(lambda x: x,)]
+if len(m['hl']) == 0:
+    m['hl'] += [(lambda x: x,)]
 
-if not type(hl) == list:
-    hl = [hl]
+if not type(m['hl']) == list:
+    m['hl'] = m['hl']
 
-for frame in hl:
+
+
+for frame in m['hl']:
     subprocess.check_call(['tput', 'clear'])
     showtxt = txt
+
+    if 'after' in m:
+        srch = re.search(m['after'], showtxt)
+        if srch:
+            showtxt = showtxt[srch.end():]
+
+    if 'until' in m:
+        srch = re.search(m['until'], showtxt)
+        if srch:
+            showtxt = showtxt[:srch.start()]
+
     for fn in frame:
         showtxt = fn(showtxt)
 

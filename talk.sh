@@ -23,10 +23,10 @@ function demo {
     ./$1.py
 }
 
-#slide splash
-#slide contact
-#slide poseestimator
-#demo webcam
-#demo webcam_fps
+slide splash
+slide contact
+slide poseestimator
+demo webcam
+demo webcam_fps
 demo webcam_grey
-
+demo webcam_circles
