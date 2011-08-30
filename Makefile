@@ -7,8 +7,17 @@ slides/%.notes.txt:
 slides/%.txt:
 	ln -s ../$*.py $@
 
+slides/%.py:
+	echo "fname = '$*.txt'" > $@
+	echo "hl = []" >> $@
+
+
 
 slides/%-graph.pdf:
-	./makegraph %* slides
+	./makegraph.py $* slides
 
-all: $(DEMOS:%=slides/%.txt) $(DEMOS:%=slides/%.notes.txt) $(DEMOS:%:slides/%-graph.pdf)
+all: $(DEMOS:%=slides/%.txt) \
+	$(DEMOS:%=slides/%.notes.txt) \
+	$(DEMOS:%=slides/%-graph.pdf) \
+	$(DEMOS:%=slides/%.py)
+

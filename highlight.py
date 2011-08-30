@@ -32,6 +32,9 @@ execfile(sys.argv[1])
 f = open(fname)
 txt = f.read()
 
+if len(hl) == 0:
+    hl += [(lambda x: x,)]
+
 if not type(hl) == list:
     hl = [hl]
 

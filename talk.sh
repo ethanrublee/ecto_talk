@@ -19,17 +19,14 @@ function slide {
 
 function demo {
     slide $1
-    if [ ! -f $1-graph.pdf ] ; then
-        ./makegraph.py $1
-    fi
-    evince -s $1-graph.pdf
+    evince -s slides/$1-graph.pdf
     ./$1.py
 }
 
 #slide splash
 #slide contact
-#slide webcam
-slide poseestimator
-demo webcam
-demo webcam_fps
+#slide poseestimator
+#demo webcam
+#demo webcam_fps
+demo webcam_grey
 

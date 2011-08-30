@@ -1,6 +1,7 @@
 fname = 'webcam_fps.txt'
 a = (green, bold)
-hl = []
+hl = [((_('(fps = .*)', *a)),
+       (_("(fps\['image'\])", blue, bold)))]
 
 
 
