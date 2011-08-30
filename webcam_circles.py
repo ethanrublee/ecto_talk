@@ -15,16 +15,15 @@ detect = calib.PatternDetector(rows=5, cols=3,
 
 draw = calib.PatternDrawer(rows=5, cols=3)
 
-imshow = highgui.imshow(name='Pattern', waitKey=2, maximize=True)
+imshow = highgui.imshow(name='Pattern', waitKey=2)
 
-plasm.connect(video_cap['image'] >> fps['image'],
-              fps['image'] >> rgb2gray['input'],
+plasm.connect(video_cap['image'] >> rgb2gray['input'],
               rgb2gray['out'] >> detect['input'],
               detect['out', 'found'] >> draw['points', 'found'],
-              video_cap['image'] >> draw['input'],
-
+              video_cap['image'] >> fps['image'],
+              fps['image'] >> draw['input'],
               draw[:] >> imshow[:])
 
 if __name__ == "__main__":
-    sched = ecto.schedulers.Singlethreaded(plasm)
+    sched = ecto.schedulers.Threadpool(plasm)
     sched.execute()
