@@ -1,4 +1,4 @@
-DEMOS = webcam webcam_fps webcam_grey webcam_circles
+DEMOS = webcam webcam_fps webcam_grey webcam_circles webcam_pose
 
 
 slides/%.notes.txt:

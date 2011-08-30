@@ -30,3 +30,4 @@ demo webcam
 demo webcam_fps
 demo webcam_grey
 demo webcam_circles
+demo webcam_pose
