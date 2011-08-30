@@ -1,4 +1,5 @@
-DEMOS = webcam webcam_fps webcam_grey webcam_circles webcam_pose
+DEMOS = webcam webcam_fps webcam_grey webcam_circles webcam_pose \
+	kinect_view
 
 
 slides/%.notes.txt:

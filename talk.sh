@@ -26,8 +26,10 @@ function demo {
 #slide splash
 #slide contact
 #slide poseestimator
-demo webcam
-demo webcam_fps
-demo webcam_grey
-demo webcam_circles
-demo webcam_pose
+#demo webcam
+#demo webcam_fps
+#demo webcam_grey
+#demo webcam_circles
+#demo webcam_pose
+
+demo kinect_view
