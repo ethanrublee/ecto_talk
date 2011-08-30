@@ -1,0 +1,13 @@
+
+   CODE:           http://github.com/plasmodic/
+
+   IRC:            irc.oftc.net:#ecto
+
+   MAILINGLIST:    http://groups.google.com/a/plasmodic.org/?hl=en
+
+   WWW:            http://plasmodic.org
+                   http://ecto.willowgarage.com
+
+
+
+

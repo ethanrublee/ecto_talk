@@ -1,0 +1,19 @@
+
+
+
+
+
+     ................
+     .....    .  .  .
+     .   .    ..   .  .
+     ........ .  ....
+
+
+     A Framework For Perception
+
+
+
+     Troy Straszheim  and  Ethan Rublee
+
+     Willow Garage, Inc.
+

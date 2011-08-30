@@ -1,0 +1,13 @@
+
+                            [you]
+                              |
+                            python
+                              |
+                            ecto
+                              |
+                 +---------+---------------+------------+
+                 |         |               |            |
+             ecto_pcl   ecto_opencv   ecto_openni   ecto_ros
+                 |         |               |            |
+                pcl      opencv         openni        roscpp,
+                                                      *_msgs

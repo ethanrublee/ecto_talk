@@ -17,7 +17,7 @@ This example shows how to extract points corresponding to objects on a table,
 """
 
 import sys
-import ecto, ecto_openni, ecto_opencv # ecto_sensor_msgs, 
+import ecto, ecto_openni, ecto_opencv # ecto_sensor_msgs,
 from ecto_pcl import *
 plasm = ecto.Plasm()
 
