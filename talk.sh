@@ -32,4 +32,6 @@ function demo {
 #demo webcam_circles
 #demo webcam_pose
 
-demo kinect_view
+demo kinect_view        # kinect -> pointcloud
+demo kinect_standalone  # kinect -> cv::Mat
+
