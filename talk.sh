@@ -1,6 +1,6 @@
 #!/bin/bash -e
 
-NOTESTTY=/dev/null
+NOTESTTY=/dev/pts/0
 
 #exec 2>$NOTESTTY
 
@@ -24,14 +24,14 @@ demo () {
 }
 
 ./slides/splash.py
-slide contact
+./slides/contact.py
 ./slides/comparison.py
-slide poseestimator
-#demo webcam
-#demo webcam_fps
-#demo webcam_grey
-#demo webcam_circles
-#demo webcam_pose
+./slides/poseestimator.py
+demo webcam
+demo webcam_fps
+demo webcam_grey
+demo webcam_circles
+demo webcam_pose
 
 #demo kinect_view        # kinect -> pointcloud
 #demo kinect_standalone  # kinect -> cv::Mat

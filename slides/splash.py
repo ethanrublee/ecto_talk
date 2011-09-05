@@ -19,6 +19,7 @@ slide = """{Grn}
      Willow Garage, Inc.
 """.format(**locals())
 
+print cls
 print slide
 
 notetxt = """
@@ -43,7 +44,8 @@ Across projects ecto, ecto_pcl, ecto_ros, ecto_opencv, ecto_openni:
 28k lines C++, 9.5k lines Python
 """
 
+
 notes("intro", notetxt)
 
-
+getch()
 
