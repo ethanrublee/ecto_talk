@@ -1,0 +1,69 @@
+ROS                       ecto
+                          
+acronym                   greek "outside"
+wire protocol             no notion of protocol
+messages                  no messages
+unreliable delivery       reliable delivery
+messages queues           no queues
+asynchronous              "synchronous"
+multithreaded             flexibly multithreaded
+XML launchfiles, etc      python scripts
+nonhybrid                 hybrid
+rosmake                   cmake
+turtles                   anything slimy or gelatinous
+
+
+ROS: supports any language you can write serialization method generators for
+     and implement the ROS transport protocol (xmlrpc)
+
+ecto:  c++.  python for wrappers only.
+
+
+
+transports centrally defined          
+no inherent notion of transport
+
+requires a master   
+no master
+
+master has no global knowledge of what is happening, doesn't control execution
+ecto:  scheduler knows what is happening, absolutely controls execution
+
+
+ROS:   tons of drivers for hardware
+ecto:  kinect, cameras.
+
+
+
+17:29 < fergs> the big thing is this: ros has PR2 drivers, etc, these
+               solve a problem Ecto doesn't care about... however if
+               you want to build a perception system (or any sort of
+               graph-based processing), you either have to A) build
+               the entire thing inside a single node (which probably
+               limits code reuse, and maintainability) or B) build a
+               whole bunch of ecto::cell-sized pieces and connect them
+               with lots of topics (as nodes performance degrades
+               horribly, as nodelets you build a whole bunch of
+               ecto::cell-sized pieces and connect them with lots of
+               topics (as nodes performance degrades horribly, as
+               nodelets you have a headache putting them together in
+               an XML launch file) and I'm sure over time we'll find
+               things to move into besides perception (for instance,
+               arm navigation planning could probably benefit from
+               ecto) grasping analysis as well
+
+     ................
+     .....    .  .  .
+     .   .    .  .  .
+     ........ .  ....
+
+
+     A Framework For Perception
+
+
+
+     Troy Straszheim
+     Ethan Rublee
+
+     Willow Garage, Inc.
+

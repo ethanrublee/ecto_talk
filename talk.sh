@@ -1,12 +1,12 @@
-#!/bin/sh -e
+#!/bin/bash -e
 
-NOTESTTY=/dev/pts/28
+NOTESTTY=/dev/null
 
-exec 2>/dev/pts/28
+#exec 2>$NOTESTTY
 
 # CACA_DRIVER=ncurses cacaview willowgarage.jpg
 
-function slide {
+slide () {
     #tput clear > $NOTESTTY
     #tput reset > $NOTESTTY
     pushd slides > /dev/null
@@ -17,15 +17,15 @@ function slide {
     popd > /dev/null
 }
 
-function demo {
+demo () {
     slide $1
     evince -s slides/$1-graph.pdf
     ./$1.py
 }
 
-#slide splash
-#slide contact
-#slide poseestimator
+slide splash
+slide contact
+slide poseestimator
 #demo webcam
 #demo webcam_fps
 #demo webcam_grey
