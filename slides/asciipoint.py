@@ -56,17 +56,21 @@ def notes(title, s):
     print >>f, cls, title, '\n', s
     f.close()
 
-def run(frames, notes, txt):
+def run(frames, notetxt, txt):
 
     if len(frames) == 0:
         frames += [(lambda x: x,)]
     
-    for frame in frames:
+    if not isinstance(notetxt, list):
+        notetxt = [notetxt]
+
+    for n, frame in zip(notetxt, frames):
         showtxt = txt
     
         for srch, rep in frame:
             showtxt = fn(showtxt, srch, rep)
     
-        cls()
+        print cls,
         print showtxt
+        notes("notes", n)
         getch()

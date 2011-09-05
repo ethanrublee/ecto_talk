@@ -23,8 +23,9 @@ demo () {
     ./$1.py
 }
 
-slide splash
+./slides/splash.py
 slide contact
+./slides/comparison.py
 slide poseestimator
 #demo webcam
 #demo webcam_fps
@@ -32,6 +33,6 @@ slide poseestimator
 #demo webcam_circles
 #demo webcam_pose
 
-demo kinect_view        # kinect -> pointcloud
-demo kinect_standalone  # kinect -> cv::Mat
-
+#demo kinect_view        # kinect -> pointcloud
+#demo kinect_standalone  # kinect -> cv::Mat
+# work your way up to colorize_clusters
