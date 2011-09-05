@@ -1,11 +1,6 @@
 #!/usr/bin/env python
 
 
-"""
-ROS:   tons of drivers for hardware
-ecto:  kinect, cameras.
-"""
-
 slide_data = dict(
     nomenclature=('nomenclature', """acronym vs greek name,
 nodes vs cells
@@ -76,25 +71,21 @@ order=['nomenclature', 'buildsystem', 'languages', 'devmodel',
 #                arm navigation planning could probably benefit from
 #                ecto) grasping analysis as well
 
-from hl import *
+from asciipoint import *
 
 print locals()
 dent = "   "
-title = "\n" + dent + "%(Blu)sROS%(nrm)s vs %(Grn)secto%(nrm)s\n\n" % locals()
+title = "\n" + dent + Blu_("ROS") +" vs " + Grn_('ecto') + "\n\n"
 
 print title
 
-frames = [(('((ROS){1,1})', Blu), ('(ecto)', Grn)),
-          (('(supports)', Red),)
-          ]
-
 totalitems = ""
 for slide in order:
-    cls()
+    print cls,
 
     print title + totalitems + dent + Wht + slide_data[slide][0] + nrm
     totalitems += dent + slide_data[slide][0] + "\n"
-    notes(slide_data[slide][1])
+    notes(*slide_data[slide])
     getch()
 
 
