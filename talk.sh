@@ -23,12 +23,14 @@ demo () {
     ./$1.py
 }
 
-#./slides/splash.py
-#./slides/contact.py
-#./slides/comparison.py
-#./slides/poseestimator.py
-#demo webcam
-demo webcam_fps
+if [ -n "" ] ; then
+    ./slides/splash.py
+    ./slides/contact.py
+    ./slides/comparison.py
+    ./slides/poseestimator.py
+    demo webcam
+    demo webcam_fps
+fi
 demo webcam_grey
 demo webcam_circles
 demo webcam_pose
