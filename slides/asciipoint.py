@@ -6,6 +6,7 @@ tty = '/dev/pts/0'
 
 bld = cl.modifiers.bold
 nrm = cl.modifiers.reset
+inv = cl.modifiers.inverse
 
 blk = cl.forecolors.black
 def blk_(s): return blk + s + nrm
@@ -41,10 +42,10 @@ def Wht_(s): return Wht + s + nrm
 Ylw = ylw + bld
 def Ylw_(s): return Ylw + s + nrm
 
-def fn(txt, srch, rep):
+def fn(txt, srch, rep, count=0, flags=0):
     return re.sub(srch,
                   rep + r'\1' + cl.modifiers.reset + cl.forecolors.normal,
-                  txt, re.MULTILINE)
+                  txt, count=count, flags=flags | re.MULTILINE)
 
 cls = '\033[H\033[2J'
 
@@ -58,19 +59,32 @@ def notes(title, s):
 
 def run(frames, notetxt, txt):
 
+    print "txt=", txt
     if len(frames) == 0:
         frames += [(lambda x: x,)]
     
     if not isinstance(notetxt, list):
         notetxt = [notetxt]
 
-    for n, frame in zip(notetxt, frames):
+    for j, frame in enumerate(frames):
         showtxt = txt
     
-        for srch, rep in frame:
-            showtxt = fn(showtxt, srch, rep)
+        for pack in frame:
+            srch = pack[0]
+            rep =  pack[1]
+            if len(pack) == 3:
+                count = pack[2]
+            else:
+                count = 0
+            if len(pack) == 4:
+                flags = pack[3]
+            else:
+                flags = 0
+            showtxt = fn(showtxt, srch, rep, count, flags)
     
-        print cls,
-        print showtxt
-        notes("notes", n)
+        print cls + showtxt
+        if j >= len(notetxt):
+            notes("notes", notetxt[-1])
+        else:
+            notes("notes", notetxt[j])
         getch()

@@ -18,16 +18,16 @@ slide () {
 }
 
 demo () {
-    slide $1
+    ./slides/$1_txt.py
     evince -s slides/$1-graph.pdf
     ./$1.py
 }
 
-./slides/splash.py
-./slides/contact.py
-./slides/comparison.py
-./slides/poseestimator.py
-demo webcam
+#./slides/splash.py
+#./slides/contact.py
+#./slides/comparison.py
+#./slides/poseestimator.py
+#demo webcam
 demo webcam_fps
 demo webcam_grey
 demo webcam_circles
