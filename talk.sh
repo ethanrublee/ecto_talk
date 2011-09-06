@@ -30,9 +30,9 @@ if [ -n "" ] ; then
     ./slides/poseestimator.py
     demo webcam
     demo webcam_fps
+    demo webcam_grey
+    demo webcam_circles
 fi
-demo webcam_grey
-demo webcam_circles
 demo webcam_pose
 
 #demo kinect_view        # kinect -> pointcloud

@@ -36,4 +36,4 @@ plasm.connect(
 
 if __name__ == "__main__":
     sched = ecto.schedulers.Threadpool(plasm)
-    sched.execute()
+    sched.execute(niter=0, nthreads=4)
