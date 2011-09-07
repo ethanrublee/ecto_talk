@@ -58,6 +58,9 @@ if [ -n "" ] ; then
     ./printinput.py
     ./slides/printinput2_txt.py
     ./printinput2.py
-    ./webcam_canny.py
 fi
-
+tput clear
+grep -C 14 'output_ =' ../opencv/modules/opencv/imgproc/GaussianBlur.cpp
+read MEH
+./webcam_canny.py
+    
