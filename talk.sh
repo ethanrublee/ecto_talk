@@ -37,5 +37,5 @@ if [ -n "" ] ; then
     demo kinect_view        # kinect -> pointcloud
     demo kinect_voxelgrid  # kinect -> cv::Mat
 fi
-
+demo colorize_clusters
 # work your way up to colorize_clusters

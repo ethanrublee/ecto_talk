@@ -17,7 +17,7 @@ normals = NormalEstimation("Normals", k_search=0, radius_search=0.2)
 
 segment = SACSegmentationFromNormals("PlanarSegmentation",
                                      model_type=SACMODEL_NORMAL_PLANE,
-                                     eps_angle=0.09, distance_threshold=0.1)
+                                     eps_angle=0.29, distance_threshold=0.1)
 
 project = ProjectInliers("ProjectInliers",
                          model_type=SACMODEL_NORMAL_PLANE)
@@ -30,7 +30,7 @@ prism = ExtractPolygonalPrismData("ExtractPrism",
 extract = ExtractIndices("Extract", negative=False)
 
 clusters = EuclideanClusterExtraction("Clusters",
-                                      min_cluster_size=250,
+                                      min_cluster_size=150,
                                       cluster_tolerance=0.005)
 
 colorize = ColorizeClusters("Colorize")
@@ -65,7 +65,6 @@ plasm.connect(cap[:] >> niconverter[:],
 
 
 if __name__ == "__main__":
-    ecto.view_plasm(plasm)
     sched = ecto.schedulers.Threadpool(plasm)
     sched.execute()
 
