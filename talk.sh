@@ -19,7 +19,9 @@ slide () {
 
 demo () {
     ./slides/$1_txt.py
-    evince -s slides/$1-graph.pdf
+    if [ -f slides/$1-graph.pdf ] ; then
+        evince -s slides/$1-graph.pdf
+    fi
     ./$1.py
 }
 
@@ -39,7 +41,18 @@ if [ -n "" ] ; then
     demo colorize_clusters
     demo noop
     demo printy
+    ./slides/emit_txt.py
+    tput clear
+    cat emit.py
+    read MEH
+    tput clear
+    ./emit.py
 fi
+./slides/printinput_txt.py
+tput clear
+cat ./printinput.py
+read MEH
+evince -s slides/printinput-graph.pdf
+tput clear
+./printinput.py
 
-#./slides/noop_txt.py
-# work your way up to colorize_clusters
