@@ -13,12 +13,14 @@ plasm = ecto.Plasm()
 cap = ecto_openni.Capture()
 conv = NiConverter()
 
+passthru = PassThrough()
 voxgrid = VoxelGrid("VoxelGrid", leaf_size=0.02)
 
 viewer = CloudViewer("Viewer", window_name="Clouds!")
 
 plasm.connect(cap[:] >> conv[:],
-              conv[:] >> voxgrid[:],
+              conv[:] >> passthru[:],
+              passthru[:] >> voxgrid[:],
               voxgrid[:] >> viewer[:])
 
 if __name__ == "__main__":

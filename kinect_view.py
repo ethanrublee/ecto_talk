@@ -1,38 +1,20 @@
 #!/usr/bin/env python
 
-"""
-This example shows how to extract points corresponding to objects on a table,
-    cluster them, colorize the clusters, and republish as a single cloud.
-
-  1) The example downsamples using a VoxelGrid before estimating
-     normals for the downsampled cloud.
-  2) These normals are then used for segmentation using RANSAC.
-  3) Segmentation produces a planar model to which all inliers are
-     projected so that a 2D convex hull can be created.
-  4) We then extract the indices of all points that are above the
-     plane formed by the convex hull.
-  5) This cloud is then clustered
-  6) The clusters are concatenated, with each having a unique color.
-
-"""
-
-import sys
-import ecto, ecto_openni
+import sys, ecto, ecto_openni
 from ecto_pcl import *
 plasm = ecto.Plasm()
 
 cap = ecto_openni.Capture()
 conv = NiConverter()
-
+passthru = PassThrough()
 viewer = CloudViewer()
 
 plasm.connect(cap[:] >> conv[:],
-              conv[:] >> viewer[:]
+              conv[:] >> passthru[:],
+              passthru[:] >> viewer[:]
               )
 
-
-
 if __name__ == "__main__":
-    sched = ecto.schedulers.Threadpool(plasm)
+    sched = ecto.schedulers.Singlethreaded(plasm)
     sched.execute()
 

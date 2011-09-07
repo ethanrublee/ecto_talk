@@ -7,7 +7,9 @@ from ecto_pcl import *
 plasm = ecto.Plasm()
 
 cap = ecto_openni.Capture()
-conv = NiConverter()
+niconverter = NiConverter()
+
+passthru = PassThrough()
 
 voxgrid = VoxelGrid("VoxelGrid", leaf_size=0.05)
 
@@ -28,7 +30,7 @@ prism = ExtractPolygonalPrismData("ExtractPrism",
 extract = ExtractIndices("Extract", negative=False)
 
 clusters = EuclideanClusterExtraction("Clusters",
-                                      min_cluster_size=150,
+                                      min_cluster_size=250,
                                       cluster_tolerance=0.005)
 
 colorize = ColorizeClusters("Colorize")
@@ -37,24 +39,25 @@ merge = MergeClouds("merge")
 
 viewer = CloudViewer()
 
-plasm.connect(cap[:] >> conv[:],
-              conv[:] >> voxgrid[:],
+plasm.connect(cap[:] >> niconverter[:],
+              niconverter[:] >> passthru[:],
+              passthru[:] >> voxgrid[:],
               voxgrid[:] >> normals[:],
               voxgrid[:] >> segment["input"],
               normals[:] >> segment["normals"],
               voxgrid[:] >> project["input"],
               segment["model"] >> project["model"],
               project[:] >> conhull[:],
-              conv[:] >> prism["input"],
+              passthru[:] >> prism["input"],
               conhull[:] >> prism["planar_hull"],
               prism[:] >> extract["indices"],
-              conv[:] >> extract["input"],
+              passthru[:] >> extract["input"],
 
               extract[:] >> clusters[:],
               clusters[:] >> colorize["clusters"],
               extract[:] >> colorize["input"],
 
-              conv[:] >> merge["input"],
+              passthru[:] >> merge["input"],
               colorize[:] >> merge["input2"],
               merge[:] >> viewer[:]
               )

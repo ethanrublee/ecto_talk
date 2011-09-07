@@ -33,8 +33,9 @@ if [ -n "" ] ; then
     demo webcam_grey
     demo webcam_circles
     demo webcam_pose
+    demo kinect_standalone        # kinect -> pointcloud
+    demo kinect_view        # kinect -> pointcloud
+    demo kinect_voxelgrid  # kinect -> cv::Mat
 fi
 
-#demo kinect_view        # kinect -> pointcloud
-#demo kinect_standalone  # kinect -> cv::Mat
 # work your way up to colorize_clusters

@@ -1,5 +1,5 @@
 DEMOS = webcam webcam_fps webcam_grey webcam_circles webcam_pose \
-	kinect_view
+	kinect_standalone kinect_view kinect_voxelgrid
 
 
 slides/%.notes.txt:
@@ -17,8 +17,6 @@ slides/%.py:
 slides/%-graph.pdf:
 	./makegraph.py $* slides
 
-all: $(DEMOS:%=slides/%.txt) \
-	$(DEMOS:%=slides/%.notes.txt) \
-	$(DEMOS:%=slides/%-graph.pdf) \
-	$(DEMOS:%=slides/%.py)
+all: $(DEMOS:%=slides/%-graph.pdf)
+
 
