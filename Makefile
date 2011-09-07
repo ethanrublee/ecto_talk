@@ -1,6 +1,6 @@
 DEMOS = webcam webcam_fps webcam_grey webcam_circles webcam_pose \
 	kinect_standalone kinect_view kinect_voxelgrid colorize_clusters \
-	noop
+	noop printy
 
 
 slides/%.notes.txt:

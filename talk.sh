@@ -38,6 +38,8 @@ if [ -n "" ] ; then
     demo kinect_voxelgrid  # kinect -> cv::Mat
     demo colorize_clusters
     demo noop
+    demo printy
 fi
+
 #./slides/noop_txt.py
 # work your way up to colorize_clusters
