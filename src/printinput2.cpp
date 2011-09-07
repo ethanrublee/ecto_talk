@@ -4,7 +4,7 @@ using namespace ecto;
 
 struct PrintInput2
 {
-  static void declare_io(const tendrils& p, tendrils& i, tendrils& o) 
+  static void declare_io(const tendrils& p, tendrils& i, tendrils& o)
   {
     i.declare<std::string>("input");
   }

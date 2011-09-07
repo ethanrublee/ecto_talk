@@ -54,5 +54,5 @@ if [ -n "" ] ; then
     evince -s slides/printinput-graph.pdf
     tput clear
     ./printinput.py
+    ./slides/printinput2_txt.py
 fi
-./slides/printinput2_txt.py
