@@ -47,12 +47,12 @@ if [ -n "" ] ; then
     read MEH
     tput clear
     ./emit.py
+    ./slides/printinput_txt.py
+    tput clear
+    cat ./printinput.py
+    read MEH
+    evince -s slides/printinput-graph.pdf
+    tput clear
+    ./printinput.py
 fi
-./slides/printinput_txt.py
-tput clear
-cat ./printinput.py
-read MEH
-evince -s slides/printinput-graph.pdf
-tput clear
-./printinput.py
-
+./slides/printinput2_txt.py
