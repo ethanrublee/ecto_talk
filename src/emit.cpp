@@ -19,8 +19,8 @@ struct Emit
   }
   int process(const tendrils& i, const tendrils& o)
   {
-    std::string emitted = str(boost::format("Emittance %u: %s") % j % what);
-    std::cout << emitted << "\n";
+    std::string emitted = str(boost::format("%u: %s") % j % what);
+    std::cout << "EMITTING: " << emitted << "\n";
     o.get<std::string>("output") = emitted;
     ++j;
     return OK;
