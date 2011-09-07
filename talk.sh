@@ -55,4 +55,6 @@ if [ -n "" ] ; then
     tput clear
     ./printinput.py
     ./slides/printinput2_txt.py
+    ./printinput2.py
+    ./webcam_canny.py
 fi

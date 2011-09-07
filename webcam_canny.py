@@ -11,14 +11,14 @@ rgb2gray = imgproc.cvtColor('rgb -> gray', flag=imgproc.RGB2GRAY)
 
 blur = imgproc.GaussianBlur(kernel=0, sigma=1)
 
-sobel = imgproc.Canny()
+canny = imgproc.Canny()
 
 imshow = highgui.imshow(name='Pattern', waitKey=2)
 
 plasm.connect(video_cap['image'] >> rgb2gray['input'],
               rgb2gray['out'] >> blur['input'],
-              blur['out'] >> sobel['input'],
-              sobel['output'] >> fps['image'],
+              blur['out'] >> canny['input'],
+              canny['out'] >> fps['image'],
               fps['image'] >> imshow['input']
               )
 
