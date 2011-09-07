@@ -39,7 +39,9 @@ if [ -n "" ] ; then
     demo kinect_view        # kinect -> pointcloud
     demo kinect_voxelgrid  # kinect -> cv::Mat
     demo colorize_clusters
-    demo noop
+    ./slides/noop_txt.py
+    ./noop.py
+    read MEH
     demo printy
     ./slides/emit_txt.py
     tput clear
@@ -58,3 +60,4 @@ if [ -n "" ] ; then
     ./printinput2.py
     ./webcam_canny.py
 fi
+
