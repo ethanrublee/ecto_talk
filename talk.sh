@@ -36,6 +36,8 @@ if [ -n "" ] ; then
     demo kinect_standalone        # kinect -> pointcloud
     demo kinect_view        # kinect -> pointcloud
     demo kinect_voxelgrid  # kinect -> cv::Mat
+    demo colorize_clusters
+    demo noop
 fi
-demo colorize_clusters
+#./slides/noop_txt.py
 # work your way up to colorize_clusters
